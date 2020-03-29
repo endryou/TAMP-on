@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<h1>TAMP-on web app</h1>
+	<p>Twoje maile: w budowie</p>
+	<p>Preferencje: w budowie</p>
+	<p>Statystyki antyspamu: w budowie</p>
+
+	<form class="logout-link" action="{% url 'logout' %}" method="post">
+		{% csrf_token %}
+		<button type="submit">Wyloguj się</button>
+	</form>
+{% endblock %}

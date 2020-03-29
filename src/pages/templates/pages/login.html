@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<form method="POST">
+		{% csrf_token %}
+		{{ form.as_p }}
+		<input type="submit" value="Zaloguj się" class="btn btn-outline-success">
+		<p></p>
+		<p></p>
+
+		<small>
+			<p><a href="{% url 'signup' %}">Nie masz konta? Zarejestruj się</a></p>
+			<p><a href="{% url 'password_reset' %}">Zapomniałeś hasła?</a></p>
+		</small>
+		<p></p>
+		<p></p>
+
+		<p>lub
+			<a href="{% url 'social:begin' 'google-oauth2' %}">
+				<button type="button" name="button" class="btn btn-danger">Zaloguj się przez konto Google</button>
+			</a>
+		</p>
+	</form>
+
+{% endblock %}a
