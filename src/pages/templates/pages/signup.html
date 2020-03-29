@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<form method="POST">
+		{% csrf_token %}
+		{{ form.as_p }}
+
+		<input type="submit" value="Utwórz konto" class="btn btn-outline-success">
+		<p>-- OR --</p>
+		<a href="{% url 'social:begin' 'google-oauth2' %}">
+			<button type="button" name="button" class="btn btn-danger">Zarejestruj się przez konto Google</button>
+		</a>
+	</form>
+
+{% endblock %}a
