@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from .config import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
 
     #third party
     'social_django',
+    'django_mailbox',
 
     #my apps
     'pages',
@@ -133,8 +135,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
-#Google OAuth2 settings
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '906065990346-i6suancm2msh6avnoa211dsli1jm7vno.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'EVoTlCGM3duY6prtebpxWeeF'
 LOGIN_REDIRECT_URL = 'home'
