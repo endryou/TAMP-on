@@ -3,6 +3,8 @@ from django.views import View
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.http import HttpResponse
+from .forms import UserCreationFormWithEmail
+from django.core.exceptions import ValidationError
 
 # Create your views here.
 class LoginView (View):
@@ -43,7 +45,7 @@ class HomeView (View):
 class SignupView (View):
 	template_name = 'pages/signup.html'
 	def post (self, request, *args, **kwargs):
-		form = UserCreationForm(request.POST)
+		form = UserCreationFormWithEmail(request.POST)
 		if form.is_valid():
 			form.save()
 			username = form.cleaned_data.get('username')
@@ -51,8 +53,12 @@ class SignupView (View):
 			user = authenticate(username=username, password=raw_password)
 			login(request, user)
 			return redirect('home')
+		else:
+			raise ValidationError
+			return redirect('signup')
+
 	def get (self, request, *args, **kwargs):
-		form = UserCreationForm()
+		form = UserCreationFormWithEmail()
 		return render(request, self.template_name, {'form': form})
 
 class ProbaGmaila (View):

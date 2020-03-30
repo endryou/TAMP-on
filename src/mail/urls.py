@@ -15,14 +15,14 @@ Including another URLconf
 """
 from django.urls import path, include
 from .views import (
-    MailListView,
+    MailBoxView,
     MailDetailView,
     MailDeleteView
     )
 
 app_name = 'mail'
 urlpatterns = [
-    path('', MailListView.as_view(), name='mail-list'),
+    path('', MailBoxView.as_view(), name='mail-list'),
     path('<int:pk>/', MailDetailView.as_view(), name='mail-detail'),
     path('<int:pk/delete/', MailDeleteView.as_view(), name='mail-list'),
     ]

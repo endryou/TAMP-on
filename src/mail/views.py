@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from .models import Mail
 from django.shortcuts import render
 from django.views.generic import (
@@ -7,7 +8,7 @@ from django.views.generic import (
 	)
 
 # Create your views here.
-class MailListView(ListView):
+class MailBoxView(ListView):
 	template_name = 'mail/mail_list.html'
 	queryset = Mail.objects.all()
 
@@ -31,3 +32,14 @@ class MailDeleteView(DeleteView):
 
 	def get_success_url(self):
 		return reverse('mail:mail-list')
+
+class MailBoxView2(ListView):
+	template_name = 'mail/mail_list.html'
+	queryset = Mail.objects.all()
+
+	def get(self, request, *args, **kwargs):
+		user = request.user
+		if user.is_authenticated:
+			if user.email is not None:
+				pass
+		return render(request, self.template_name)
