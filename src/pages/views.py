@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.http import HttpResponse
 
 # Create your views here.
 class LoginView (View):
@@ -53,3 +54,7 @@ class SignupView (View):
 	def get (self, request, *args, **kwargs):
 		form = UserCreationForm()
 		return render(request, self.template_name, {'form': form})
+
+class ProbaGmaila (View):
+	#return HttpResponse(gmail+ssl://tttttttttttttt7@gmail.com%40gmail.com:oauth2@imap.gmail.com?archive=Archived)
+	pass

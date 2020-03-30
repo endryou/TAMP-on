@@ -26,7 +26,9 @@ from .views import (
     LogoutView,
     RegisterView,
     SignupView,
-    WelcomeView
+    WelcomeView,
+
+    ProbaGmaila
     )
 
 urlpatterns = [
@@ -36,6 +38,7 @@ urlpatterns = [
     path('', WelcomeView.as_view(), name='welcome'),
     path('signup/', SignupView.as_view(), name='signup'),
     path('home/', HomeView.as_view(), name='home'),
+    path('proba/', ProbaGmaila.as_view(), name='proba'),
 
     url(r'^', include('django.contrib.auth.urls')),
     url(r'oauth/', include('social_django.urls', namespace='social')),

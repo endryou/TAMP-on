@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for instance in object_list %}
+	<li> {{ instance.pk }}: <a href='{{ instance.get_absolute_url }}'> {{ instance.mail_title }}      from{{ instance.mail_from }} </li>
+{% endfor %}
+
+{% endblock %}

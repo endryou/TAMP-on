@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
     #my apps
     'pages',
+    'mail',
 ]
 
 AUTHENTICATION_BACKENDS = [
