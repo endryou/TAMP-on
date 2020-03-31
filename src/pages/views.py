@@ -2,10 +2,16 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from .forms import UserCreationFormWithEmail
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+import requests
+import json
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
+from rest_framework import status
+from rest_framework.reverse import reverse as api_reverse
 from .models import Mail, MailBox
 from django.views.generic import (
 	DetailView,
@@ -97,5 +103,24 @@ class MailDeleteView(DeleteView):
 	def get_success_url(self):
 		return reverse('mail:mail-list')
 
+class NotWorkingView (View):
+	template_name = 'pages/notworking.html'
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
 class CreateMailBoxView(View):
-	pass
+	def get(self, request, *args, **kwargs):
+		user = request.user
+		email = user.email.replace('@gmail.com','')
+		data =	{
+		'name': email,
+		'uri': 'gmail+ssl://' + email + '%40gmail.com:oauth2@imap.gmail.com?archive=Archived',
+		'owner': user,
+		}
+		data_json = JsonResponse(model_to_dict(data))
+		url = api_reverse("api-pages:mailbox-create")
+		response = requests.post(url, data=data_json)
+		if response == status.HTTP_200_OK:
+			redirect ('home')
+		else:
+			redirect('not-working')

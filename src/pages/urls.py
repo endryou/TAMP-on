@@ -34,7 +34,8 @@ from .views import (
 
     CreateMailBoxView,
 
-    ProbaGmaila
+    ProbaGmaila,
+    NotWorkingView,
     )
 
 urlpatterns = [
@@ -45,10 +46,11 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('home/', HomeView.as_view(), name='home'),
     path('proba/', ProbaGmaila.as_view(), name='proba'),
+    path('notworking/', NotWorkingView.as_view(), name='not-working'),
 
-    path('create_mailbox/', CreateMailBoxView.as_view(), name='create-mailbox')
+    path('create_mailbox/', CreateMailBoxView.as_view(), name='create-mailbox'),
 
-    path('', MailBoxView.as_view(), name='mail-list'),
+    path('mail-list', MailBoxView.as_view(), name='mail-list'),
     path('<int:pk>/', MailDetailView.as_view(), name='mail-detail'),
     path('<int:pk/delete/', MailDeleteView.as_view(), name='mail-list'),
 

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'social_django',
     'django_mailbox',
     'rest_framework',
+    'requests',
 
     #my apps
     'pages',
