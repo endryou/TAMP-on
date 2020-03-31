@@ -5,6 +5,13 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.http import HttpResponse
 from .forms import UserCreationFormWithEmail
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
+from .models import Mail, MailBox
+from django.views.generic import (
+	DetailView,
+	ListView,
+	DeleteView
+	)
 
 # Create your views here.
 class LoginView (View):
@@ -55,7 +62,7 @@ class SignupView (View):
 			return redirect('home')
 		else:
 			raise ValidationError
-			return redirect('signup')
+			return redirect('create-mailbox')
 
 	def get (self, request, *args, **kwargs):
 		form = UserCreationFormWithEmail()
@@ -63,4 +70,32 @@ class SignupView (View):
 
 class ProbaGmaila (View):
 	#return HttpResponse(gmail+ssl://tttttttttttttt7@gmail.com%40gmail.com:oauth2@imap.gmail.com?archive=Archived)
+	pass
+
+class MailBoxView(ListView):
+	template_name = 'mail/mail_list.html'
+	queryset = Mail.objects.all()
+
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
+class MailDetailView(DetailView):
+	template_name = 'mail/mail.html'
+	queryset = Mail.objects.all()
+
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
+class MailDeleteView(DeleteView):
+	template_name = 'mail/mail_delete.html'
+	#success_url = '../../'
+	queryset = Mail.objects.all()
+
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
+	def get_success_url(self):
+		return reverse('mail:mail-list')
+
+class CreateMailBoxView(View):
 	pass

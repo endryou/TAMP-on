@@ -28,6 +28,12 @@ from .views import (
     SignupView,
     WelcomeView,
 
+    MailBoxView,
+    MailDetailView,
+    MailDeleteView,
+
+    CreateMailBoxView,
+
     ProbaGmaila
     )
 
@@ -39,6 +45,12 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('home/', HomeView.as_view(), name='home'),
     path('proba/', ProbaGmaila.as_view(), name='proba'),
+
+    path('create_mailbox/', CreateMailBoxView.as_view(), name='create-mailbox')
+
+    path('', MailBoxView.as_view(), name='mail-list'),
+    path('<int:pk>/', MailDetailView.as_view(), name='mail-detail'),
+    path('<int:pk/delete/', MailDeleteView.as_view(), name='mail-list'),
 
     url(r'^', include('django.contrib.auth.urls')),
     url(r'oauth/', include('social_django.urls', namespace='social')),

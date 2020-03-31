@@ -1,7 +1,8 @@
-from django.db import models
-from django.apps import AppConfig
-
+from django_mailbox.models import Mailbox, Message
 
 # Create your models here.
-class PagesConfig(AppConfig):
-    name = 'pages'
+class MailBox (Mailbox):
+	pass
+
+class Mail(Message):
+	pass
