@@ -21,36 +21,47 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from .views import (
+    #User based views
+    UserLoginView,
+    UserLogoutView,
+    UserSignupView,
+    UserDeleteView,
+    UserUpdateView,
+    UserChangePassword,
+
+    #Main views
     HomeView,
-    LoginView,
-    LogoutView,
-    RegisterView,
-    SignupView,
     WelcomeView,
+    NotWorkingView,
 
-    MailBoxView,
-    MailDetailView,
-    MailDeleteView,
-
+    #MailBox based views
     CreateMailBoxView,
 
-    ProbaGmaila,
-    NotWorkingView,
+    #Mail based views
+    MailListView,
+    MailDetailView,
+    MailDeleteView,
     )
 
 urlpatterns = [
-    path('login/', LoginView.as_view(), name='user-login'),
-    path('logout/', LogoutView.as_view(), name='user-logout'),
-    path('register/', RegisterView.as_view(), name='register'),
+    #User based views
+    path('login/', UserLoginView.as_view(), name='user-login'),
+    path('logout/', UserLogoutView.as_view(), name='user-logout'),
+    path('signup/', UserSignupView.as_view(), name='signup'),
+    path('user-update/', UserUpdateView.as_view(), name='user-update'),
+    path('user-delete/', UserDeleteView.as_view(), name='user-delete'),
+    path('user-change-password/', UserChangePassword.as_view(), name='change-password'),
+
+    #Other views
     path('', WelcomeView.as_view(), name='welcome'),
-    path('signup/', SignupView.as_view(), name='signup'),
     path('home/', HomeView.as_view(), name='home'),
-    path('proba/', ProbaGmaila.as_view(), name='proba'),
     path('notworking/', NotWorkingView.as_view(), name='not-working'),
 
+    #MailBox based views
     path('create_mailbox/', CreateMailBoxView.as_view(), name='create-mailbox'),
 
-    path('mail-list', MailBoxView.as_view(), name='mail-list'),
+    #Mail based views
+    path('mail-list', MailListView.as_view(), name='mail-list'),
     path('<int:pk>/', MailDetailView.as_view(), name='mail-detail'),
     path('<int:pk/delete/', MailDeleteView.as_view(), name='mail-list'),
 

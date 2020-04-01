@@ -6,6 +6,12 @@
 	<p>Preferencje: w budowie</p>
 	<p>Statystyki antyspamu: w budowie</p>
 
+
+	<p><a href="{% url 'user-update' %}">Zmień swoje dane</a></p>
+	<p><a href="{% url 'change-password' %}">Zmień hasło</a></p>
+	<p><a href="{% url 'user-delete' %}">Usuń swoje konto</a></p>
+	
+
 	<form class="logout-link" action="{% url 'logout' %}" method="post">
 		{% csrf_token %}
 		<button type="submit">Wyloguj się</button>
