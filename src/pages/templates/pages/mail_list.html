@@ -2,8 +2,17 @@
 
 {% block content %}
 
-{% for instance in object_list %}
-	<li> {{ instance.pk }}: <a href='{{ instance.get_absolute_url }}'> {{ instance.subject }}      from{{ instance.from_header }} </li>
+<p><a href='../get-mail'>Pobierz pocztę</a><p>
+<p><a href='../home'>Powrót do strony głównej</a><p>
+
+<h2> Twoje maile </h2>
+{% for instance in queryset %}
+	<ul>
+		<li> 
+			<p><a href='{{ instance.get_absolute_url }}'> {{ instance.subject }} </a></p>
+			<p>from:  {{ instance.from_header }} </p>
+		</li>
+	</ul>
 {% endfor %}
 
 {% endblock %}
