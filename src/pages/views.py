@@ -157,11 +157,19 @@ class MailListView(View):
 			name=request.user.email.replace('@gmail.com',''),
 			owner=request.user
 			)
-		queryset = Mail.objects.filter(mailbox_id=mailbox.id).values()
-		context = {}
-		for item in queryset:
-			context[item['id']] = item
-		print(context)
+		queryset = Mail.objects.filter(mailbox_id=mailbox.id, spam=False).values()
+		return render(request, self.template_name, {'queryset':queryset})
+
+class SpamListView(View):
+	template_name = 'pages/mail_list.html'
+	queryset = None
+
+	def get(self, request, *args, **kwargs):
+		mailbox = MailBox.objects.get(
+			name=request.user.email.replace('@gmail.com',''),
+			owner=request.user
+			)
+		queryset = Mail.objects.filter(mailbox_id=mailbox.id, spam=True).values()
 		return render(request, self.template_name, {'queryset':queryset})
 
 class MailGetView(ListView):
@@ -225,15 +233,21 @@ class MailGetView(ListView):
 						snippet=msg['snippet']
 						)
 					obj.save()
+					mailbox.received_counter += 1
 
 		return redirect('mail-list')
 
-class MailDetailView(DetailView):
-	template_name = 'pages/mail.html'
+class MailDetailView(View):
+	template_name = 'pages/mail_detail.html'
 	queryset = Mail.objects.all()
 
-	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
+	#def get(self, request, *args, **kwargs):
+	#	mailbox = MailBox.objects.get(
+	#		name=request.user.email.replace('@gmail.com',''),
+	#		owner=request.user
+	#		)
+	#	queryset = Mail.objects.filter(mailbox_id=mailbox.id).values()
+	#	return render(request, self.template_name, {'queryset':queryset})
 
 class MailDeleteView(DeleteView):
 	template_name = 'pages/mail_delete.html'

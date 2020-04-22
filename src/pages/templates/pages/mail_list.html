@@ -2,15 +2,16 @@
 
 {% block content %}
 
-<p><a href='../get-mail'>Pobierz pocztę</a><p>
-<p><a href='../home'>Powrót do strony głównej</a><p>
+<p><a href="{% url 'get-mail' %}">Pobierz pocztę</a><p>
+<p><a href="{% url 'home' %}">Powrót do strony głównej</a><p>
 
 <h2> Twoje maile </h2>
 {% for instance in queryset %}
 	<ul>
 		<li> 
-			<p><a href='{{ instance.get_absolute_url }}'> {{ instance.subject }} </a></p>
+			<p><a href="{{ instance.get_absolute_url }}"> {{ instance.subject }} </a></p>
 			<p>from:  {{ instance.from_header }} </p>
+			<p>id:    {{ instance.id }}</p>
 		</li>
 	</ul>
 {% endfor %}

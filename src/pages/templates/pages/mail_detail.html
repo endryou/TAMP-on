@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<p> {{ object.id }} </p>
 <p> {{ object.from_header }} </p>
 <p> {{ object.to_header }} </p>
 <h1> {{ object.subject }} </h1>
 <p> {{ object.body }} </p>
+
+<p><a href="{% url 'home' %}">Powrót do strony głównej</a><p>
 {% endblock %}
