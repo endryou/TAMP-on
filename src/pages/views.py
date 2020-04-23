@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpRequest
+from django.urls import reverse
+from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
 from django.core.exceptions import ValidationError
 
 from django.views import View
@@ -24,6 +25,8 @@ from google.auth.transport.requests import Request
 
 from rest_framework import status
 from rest_framework.reverse import reverse as api_reverse
+
+from datetime import datetime
 
 from .models import Mail, MailBox
 from .forms import UserCreationFormWithEmail, UserUpdateForm
@@ -148,29 +151,25 @@ class CreateMailBoxView(View):
 
 
 #Mail based views
-class MailListView(View):
+class MailListView(ListView):
 	template_name = 'pages/mail_list.html'
-	queryset = None
 
-	def get(self, request, *args, **kwargs):
+	def get_queryset(self):
 		mailbox = MailBox.objects.get(
-			name=request.user.email.replace('@gmail.com',''),
-			owner=request.user
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
 			)
-		queryset = Mail.objects.filter(mailbox_id=mailbox.id, spam=False).values()
-		return render(request, self.template_name, {'queryset':queryset})
+		return Mail.objects.filter(mailbox_id=mailbox.id, spam=False).values()
 
-class SpamListView(View):
-	template_name = 'pages/mail_list.html'
-	queryset = None
+class SpamListView(ListView):
+	template_name = 'pages/spam_list.html'
 
-	def get(self, request, *args, **kwargs):
+	def get_queryset(self):
 		mailbox = MailBox.objects.get(
-			name=request.user.email.replace('@gmail.com',''),
-			owner=request.user
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
 			)
-		queryset = Mail.objects.filter(mailbox_id=mailbox.id, spam=True).values()
-		return render(request, self.template_name, {'queryset':queryset})
+		return Mail.objects.filter(mailbox_id=mailbox.id, spam=True).values()
 
 class MailGetView(ListView):
 	template_name = 'pages/get_mail.html'
@@ -198,10 +197,10 @@ class MailGetView(ListView):
 
 		if messages:
 			email = request.user.email.replace('@gmail.com','')
-			mailbox = MailBox.objects.get(
+			mailbox = MailBox.objects.filter(
 				name=email,
 				owner=request.user
-			)
+				)
 			for message in messages:
 				msg = service.users().messages().get(
 					userId='me',
@@ -213,48 +212,68 @@ class MailGetView(ListView):
 				headers = {}
 				for header in headers_raw:
 					headers[header['name']] = header['value']
-				try:
-					obj = Mail.objects.get(
-						mailbox_id=mailbox.id,
-						subject=headers['Subject'],
-						from_header=headers['From'],
-						to_header=headers['To']
-						)
-				except Mail.DoesNotExist:
-					obj = Mail(
-						mailbox_id=mailbox.id,
-						subject=headers['Subject'],
-						from_header=headers['From'],
-						to_header=headers['To'],
-						message_id=msg['id'],
-						body=msg['payload']['body'],
-						#eml=msg['raw'],
-						spam=False,
-						snippet=msg['snippet']
-						)
-					obj.save()
-					mailbox.received_counter += 1
+				if int(msg['historyId'])>mailbox[0].history_id:
+					print(int(msg['historyId']))
+					print(mailbox[0].history_id)
+					try:
+						obj = Mail.objects.get(
+							mailbox_id=mailbox[0].id,
+							subject=headers['Subject'],
+							from_header=headers['From'],
+							to_header=headers['To']
+							)
+					except Mail.DoesNotExist:
+						obj = Mail(
+							mailbox_id=mailbox[0].id,
+							subject=headers['Subject'],
+							from_header=headers['From'],
+							to_header=headers['To'],
+							message_id=msg['id'],
+							body=msg['payload']['body'],
+							#eml=msg['raw'],
+							spam=False,
+							snippet=msg['snippet']
+							)
+						obj.save()
+						x = mailbox[0].received_counter + 1
+						mailbox.update(received_counter=x, history_id=msg["historyId"])
+						mailbox[0].refresh_from_db()
 
-		return redirect('mail-list')
+		return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-class MailDetailView(View):
+class MailDetailView(DetailView):
 	template_name = 'pages/mail_detail.html'
 	queryset = Mail.objects.all()
-
-	#def get(self, request, *args, **kwargs):
-	#	mailbox = MailBox.objects.get(
-	#		name=request.user.email.replace('@gmail.com',''),
-	#		owner=request.user
-	#		)
-	#	queryset = Mail.objects.filter(mailbox_id=mailbox.id).values()
-	#	return render(request, self.template_name, {'queryset':queryset})
 
 class MailDeleteView(DeleteView):
 	template_name = 'pages/mail_delete.html'
 	queryset = Mail.objects.all()
 
-	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
-
 	def get_success_url(self):
-		return reverse('mail:mail-list')
+		return reverse('mail-list')
+
+class MailChangeSpamLabelView(View):
+	template_name = 'pages/mail_change_spam_label.html'
+
+	def get(self, request, *args, **kwargs):
+		queryset = Mail.objects.filter(id=kwargs["pk"])
+		context = {"subject": queryset[0].subject,
+			"from_header": queryset[0].from_header
+			}
+		return render(request, self.template_name, context)
+
+	def post(self, request, *args, **kwargs):
+		obj = Mail.objects.filter(id=kwargs["pk"])
+		mailbox = MailBox.objects.filter(id=obj[0].mailbox_id)
+		if obj[0].spam == True:
+			x = mailbox[0].spam_counter - 1
+			obj.update(spam=False) 
+			mailbox.update(spam_counter=x)
+		else:
+			x = mailbox[0].spam_counter + 1
+			obj.update(spam=True)
+			mailbox.update(spam_counter=x)
+		obj[0].refresh_from_db()
+		mailbox[0].refresh_from_db()
+		ad = obj[0].get_absolute_url()
+		return redirect(ad)

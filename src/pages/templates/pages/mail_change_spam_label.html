@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<form action='.' method="POST">{% csrf_token %}
+		{% if object.spam == True %}
+		<h2>Czy chcesz oznaczyć tego maila jako SPAM?</h2>
+		{% else %}
+		<h2>Czy chcesz oznaczyć tego maila jako nieSPAM?</h2>
+		{% endif %}
+		<p>Tytuł: {{ subject }}</p>
+		<p>Od: {{from_header}}?</p>
+		<p><input type='submit' value='Tak' />  <a href="{% url 'mail-list' %}">Powrót</a></p>
+	</form>
+
+{% endblock %}

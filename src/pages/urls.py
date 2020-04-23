@@ -43,6 +43,7 @@ from .views import (
     MailDeleteView,
     MailGetView,
     SpamListView,
+    MailChangeSpamLabelView,
     )
 
 urlpatterns = [
@@ -65,9 +66,10 @@ urlpatterns = [
     #Mail based views
     path('mail_list/', MailListView.as_view(), name='mail-list'),
     path('spam_list/', SpamListView.as_view(), name='spam-list'),
-    path('<int:id>/', MailDetailView.as_view(), name='mail-detail'),
-    path('<int:pk/delete/', MailDeleteView.as_view(), name='mail-delete'),
+    path('<int:pk>/', MailDetailView.as_view(), name='mail-detail'),
+    path('<int:pk>/delete/', MailDeleteView.as_view(), name='mail-delete'),
     path('get-mail/', MailGetView.as_view(), name="get-mail"),
+    path('<int:pk>/change-spam-label/', MailChangeSpamLabelView.as_view(), name='change-spam-label'),
 
     url(r'^', include('django.contrib.auth.urls')),
     url(r'oauth/', include('social_django.urls', namespace='social')),
