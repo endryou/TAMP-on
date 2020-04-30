@@ -1,9 +1,14 @@
 from django.contrib.auth import logout, login, authenticate, update_session_auth_hash
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm, PasswordChangeForm
+from django.contrib.auth.forms import (
+	UserCreationForm, 
+	AuthenticationForm, 
+	UserChangeForm, 
+	PasswordChangeForm
+	)
 from django.contrib.auth.models import User
 from django.contrib import messages
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_list_or_404
 from django.urls import reverse
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
 from django.core.exceptions import ValidationError
@@ -28,8 +33,15 @@ from rest_framework.reverse import reverse as api_reverse
 
 from datetime import datetime
 
-from .models import Mail, MailBox
-from .forms import UserCreationFormWithEmail, UserUpdateForm
+from .models import Mail, MailBox, Blacklist
+from .forms import (
+	UserCreationFormWithEmail, 
+	UserUpdateForm, 
+	MailBoxModelForm, 
+	BlacklistModelForm,
+	)
+
+
 
 
 # User based views
@@ -113,8 +125,6 @@ class UserChangePassword(View):
 
 
 
-
-
 #Main views
 class WelcomeView (View):
 	template_name = 'pages/welcome.html'
@@ -124,7 +134,11 @@ class WelcomeView (View):
 class HomeView (View):
 	template_name = 'pages/home.html'
 	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
+		mailbox = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		return render(request, self.template_name, {"mailbox": mailbox})
 
 class NotWorkingView (View):
 	template_name = 'pages/notworking.html'
@@ -132,6 +146,39 @@ class NotWorkingView (View):
 		return render(request, self.template_name)
 
 
+
+
+#Blacklist based views
+class BlacklistCreateView(CreateView):
+	template_name = 'pages/blacklist_create.html'
+	form_class = BlacklistModelForm
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+	def form_valid(self, form):
+		obj = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		form.instance.mailbox = obj
+		return super(BlacklistCreateView, self).form_valid(form)
+
+class BlacklistUpdateView(UpdateView):
+	template_name = 'pages/blacklist_create.html'
+	form_class = BlacklistModelForm
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+class BlacklistDeleteView(DeleteView):
+	template_name = 'pages/blacklist_delete.html'
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
 
 
 
@@ -146,6 +193,30 @@ class CreateMailBoxView(View):
 			owner=request.user
 			)
 		return redirect ('home')
+
+class MailBoxBayessUpdateView(UpdateView):
+	template_name = 'pages/mailbox_bayess_update.html'
+	form_class = MailBoxModelForm
+	queryset = MailBox.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+class SpamSettingsView(View):
+	template_name = "pages/spam_settings.html"
+
+	def get (self, request, *args, **kwargs):
+		obj = MailBox.objects.get(id=kwargs["pk"])
+		blacklist = list(Blacklist.objects.filter(mailbox=obj))
+		if not blacklist:
+			blacklist = None
+		return render(request, self.template_name, {"object": obj, "blacklist":blacklist})
+
+class SpamStatsView(View):
+	template_name="pages/spam_stats.html"
+	def get (self, request, *args, **kwargs):
+		obj = MailBox.objects.get(id=kwargs["pk"])
+		return render(request, self.template_name, {"object": obj})
 
 
 

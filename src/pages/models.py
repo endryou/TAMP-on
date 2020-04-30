@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.urls import reverse
 from rest_framework.reverse import reverse as api_reverse
+from picklefield.fields import PickledObjectField
 
 
 # Create your models here.
@@ -35,6 +36,8 @@ class MailBox (Mailbox):
 	spam_counter = models.IntegerField(default=0)
 	received_counter = models.IntegerField(default=0)
 	history_id = models.BigIntegerField(default=0)
+	bayess_filter_sensibility = models.CharField(max_length=7, default="medium") #can  be "low", "medium", "high"
+	#blacklist = PickledObjectField(default=list)
 
 	def get_api_url(self, request=None):
 		return api_reverse("api-pages:mailbox-create", kwargs={'pk': self.id}, request=request)
@@ -60,3 +63,8 @@ class Mail(Message):
 
 	def get_absolute_url(self):
 		return reverse("mail-detail", kwargs={"pk": self.id})
+
+class Blacklist(models.Model):
+	mailbox = models.ForeignKey(MailBox, on_delete=models.CASCADE)
+	#mailbox_id = models.IntegerField()
+	address = models.CharField(max_length=30)

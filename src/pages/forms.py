@@ -2,6 +2,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
 from django import forms
 from django.core.exceptions import ValidationError
+from .models import MailBox, Blacklist
 
 class UserCreationFormWithEmail (UserCreationForm):
 	email = forms.EmailField(label='Gmail address')
@@ -31,3 +32,13 @@ class UserUpdateForm(forms.ModelForm):
         	'groups',
         	'password',
         	)
+
+class MailBoxModelForm(forms.ModelForm):
+    class Meta:
+        model = MailBox
+        fields = ['bayess_filter_sensibility']
+
+class BlacklistModelForm(forms.ModelForm):
+    class Meta:
+        model = Blacklist
+        fields = ['address']

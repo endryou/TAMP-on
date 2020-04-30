@@ -34,8 +34,16 @@ from .views import (
     WelcomeView,
     NotWorkingView,
 
+    #Blacklist based views
+    BlacklistCreateView,
+    BlacklistUpdateView,
+    BlacklistDeleteView,
+
     #MailBox based views
     CreateMailBoxView,
+    SpamStatsView,
+    SpamSettingsView,
+    MailBoxBayessUpdateView,
 
     #Mail based views
     MailListView,
@@ -60,8 +68,16 @@ urlpatterns = [
     path('home/', HomeView.as_view(), name='home'),
     path('notworking/', NotWorkingView.as_view(), name='not-working'),
 
+    #Blacklist based views
+    path('blacklist/create/', BlacklistCreateView.as_view(), name='blacklist-create'),
+    path('blacklist/<int:pk>/delete/', BlacklistDeleteView.as_view(), name='blacklist-delete'),
+    path('blacklist/<int:pk>/update/', BlacklistUpdateView.as_view(), name='blacklist-update'),
+
     #MailBox based views
     path('create_mailbox/', CreateMailBoxView.as_view(), name='create-mailbox'),
+    path('spam-stats/<int:pk>/', SpamStatsView.as_view(), name='spam-stats'),
+    path('spam-settings/<int:pk>/bayess-update/', MailBoxBayessUpdateView.as_view(), name='bayess-update'),
+    path('spam-settings/<int:pk>/', SpamSettingsView.as_view(), name='spam-settings'),
 
     #Mail based views
     path('mail_list/', MailListView.as_view(), name='mail-list'),
@@ -71,6 +87,7 @@ urlpatterns = [
     path('get-mail/', MailGetView.as_view(), name="get-mail"),
     path('<int:pk>/change-spam-label/', MailChangeSpamLabelView.as_view(), name='change-spam-label'),
 
+    #Other sources
     url(r'^', include('django.contrib.auth.urls')),
     url(r'oauth/', include('social_django.urls', namespace='social')),
     ]
