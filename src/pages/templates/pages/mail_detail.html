@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+		<h1> Twój mail: </h1>
+		<p> Od: {{ object.from_header }} </p>
+		<p> Do: {{ object.to_header }} </p>
+		<h2> Temat: {{ object.subject }} </h2>
+		<p> {{object.snippet}} </p>
+		{% if object.spam == True %}
+			<p> Ten mail to SPAM </p>
+			<p><a href='../{{object.id}}/change-spam-label/'>To nie jest SPAM</a><p>
+			<p><a href="{% url 'spam-list' %}">Powrót do SPAMU</a><p>
+		{% else %}
+			<p> Ten mail to nie jest SPAM </p>
+			<p><a href='../{{object.id}}/change-spam-label/'>Oznacz jako SPAM</a><p>
+			<p><a href="{% url 'mail-list' %}">Powrót do listy maili</a><p>
+		{% endif %}
+	
+	<p><a href='../{{object.id}}/delete/'>Usuń tego maila</a><p>
+	<p><a href="{% url 'home' %}">Powrót do strony głównej</a><p>
+{% endblock %}

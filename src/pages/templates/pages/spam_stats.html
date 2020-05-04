@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<h1>Statystki spamowe</h1>
+
+	<p>Odebrałeś już {{object.received_counter}} wiadomości</p>
+	<p>w tym {{object.spam_counter}} oznaczonych jako SPAM.</p>
+	
+
+	<p><a href="{% url 'home' %}">Powrót do strony głównej</a><p>
+{% endblock %}s

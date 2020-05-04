@@ -1,27 +1,52 @@
-from django.shortcuts import render, redirect
-from django.views import View
-from django.contrib.auth import logout, login, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.http import HttpResponse, HttpRequest
-from .forms import UserCreationFormWithEmail
-from django.core.exceptions import ValidationError
+from django.contrib.auth import logout, login, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import (
+	UserCreationForm, 
+	AuthenticationForm, 
+	UserChangeForm, 
+	PasswordChangeForm
+	)
 from django.contrib.auth.models import User
-import requests
-import json
-from django.http import JsonResponse
-from django.forms.models import model_to_dict
-from rest_framework import status
-from rest_framework.reverse import reverse as api_reverse
-from .models import Mail, MailBox
+from django.contrib import messages
+
+from django.shortcuts import render, redirect, get_list_or_404
+from django.urls import reverse
+from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
+from django.core.exceptions import ValidationError
+
+from django.views import View
 from django.views.generic import (
+	CreateView,
+	DeleteView,
 	DetailView,
 	ListView,
-	DeleteView
+	UpdateView,
 	)
 
-# Create your views here.
-class LoginView (View):
-	template_name = 'pages/login.html'
+import pickle
+import os.path
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+
+from rest_framework import status
+from rest_framework.reverse import reverse as api_reverse
+
+from datetime import datetime
+
+from .models import Mail, MailBox, Blacklist
+from .forms import (
+	UserCreationFormWithEmail, 
+	UserUpdateForm, 
+	MailBoxModelForm, 
+	BlacklistModelForm,
+	)
+
+
+
+
+# User based views
+class UserLoginView (View):
+	template_name = 'pages/user_login.html'
 	def post (self, request, *args, **kwargs):
 		form = AuthenticationForm(data=request.POST)
 		if form.is_valid():
@@ -34,29 +59,41 @@ class LoginView (View):
 		form = AuthenticationForm()
 		return render(request, self.template_name, {'form': form})
 
-class LogoutView (View):
-	template_name = 'pages/logout.html'
+class UserLogoutView (View):
 	def post (self, request, *args, **kwargs):
 		logout(request)
 		return redirect('welcome')
 
-class RegisterView (View):
-	template_name = 'pages/register.html'
+class UserUpdateView (View):
+	template_name = 'pages/user_update.html'
+	model = User
+	success_url = 'pages/user_update.html'
+	def post (self, request, *args, **kwargs):
+		form = UserUpdateForm(data=request.POST, instance=request.user)
+		form.fields['first_name'].initial = request.user.first_name
+		form.fields['last_name'].initial = request.user.last_name
+		form.fields['email'].initial = request.user.email
+		if form.is_valid():
+			form.save()
+		return redirect('home')
 	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
+		form = UserUpdateForm()
+		form.fields['first_name'].initial = request.user.first_name
+		form.fields['last_name'].initial = request.user.last_name
+		form.fields['email'].initial = request.user.email
+		return render(request, self.template_name, {'form': form})	
 
-class WelcomeView (View):
-	template_name = 'pages/welcome.html'
-	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
+class UserDeleteView (DeleteView):
+	template_name = 'pages/user_delete.html'
+	def get (self, request, *args, **kwargs):
+		return render(request, self.template_name, {})
+	def post(self, request, *args, **kwargs):
+		user = User.objects.get(pk=request.user.pk)
+		user.delete()
+		return redirect('welcome') 
 
-class HomeView (View):
-	template_name = 'pages/home.html'
-	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
-
-class SignupView (View):
-	template_name = 'pages/signup.html'
+class UserSignupView (View):
+	template_name = 'pages/user_signup.html'
 	def post (self, request, *args, **kwargs):
 		form = UserCreationFormWithEmail(request.POST)
 		if form.is_valid():
@@ -65,62 +102,249 @@ class SignupView (View):
 			raw_password = form.cleaned_data.get('password1')
 			user = authenticate(username=username, password=raw_password)
 			login(request, user)
-			return redirect('home')
+			return redirect('create-mailbox')
 		else:
 			raise ValidationError
-			return redirect('create-mailbox')
 
 	def get (self, request, *args, **kwargs):
 		form = UserCreationFormWithEmail()
 		return render(request, self.template_name, {'form': form})
 
-class ProbaGmaila (View):
-	#return HttpResponse(gmail+ssl://tttttttttttttt7@gmail.com%40gmail.com:oauth2@imap.gmail.com?archive=Archived)
-	pass
+class UserChangePassword(View):
+	template_name = 'pages/user_change_password.html'
+	def post (self, request, *args, **kwargs):
+		form = PasswordChangeForm(request.user, request.POST)
+		if form.is_valid():
+			user = form.save()
+			update_session_auth_hash(request, user)
+			return redirect('home')
+	def get (self, request, *args, **kwargs):
+		form = PasswordChangeForm(request.user)
+		return render(request, self.template_name, {'form': form})
 
-class MailBoxView(ListView):
-	template_name = 'mail/mail_list.html'
-	queryset = Mail.objects.all()
 
+
+
+#Main views
+class WelcomeView (View):
+	template_name = 'pages/welcome.html'
 	def get(self, request, *args, **kwargs):
 		return render(request, self.template_name)
 
-class MailDetailView(DetailView):
-	template_name = 'mail/mail.html'
-	queryset = Mail.objects.all()
-
+class HomeView (View):
+	template_name = 'pages/home.html'
 	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
-
-class MailDeleteView(DeleteView):
-	template_name = 'mail/mail_delete.html'
-	#success_url = '../../'
-	queryset = Mail.objects.all()
-
-	def get(self, request, *args, **kwargs):
-		return render(request, self.template_name)
-
-	def get_success_url(self):
-		return reverse('mail:mail-list')
+		mailbox = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		return render(request, self.template_name, {"mailbox": mailbox})
 
 class NotWorkingView (View):
 	template_name = 'pages/notworking.html'
 	def get(self, request, *args, **kwargs):
 		return render(request, self.template_name)
 
+
+
+
+#Blacklist based views
+class BlacklistCreateView(CreateView):
+	template_name = 'pages/blacklist_create.html'
+	form_class = BlacklistModelForm
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+	def form_valid(self, form):
+		obj = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		form.instance.mailbox = obj
+		return super(BlacklistCreateView, self).form_valid(form)
+
+class BlacklistUpdateView(UpdateView):
+	template_name = 'pages/blacklist_create.html'
+	form_class = BlacklistModelForm
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+class BlacklistDeleteView(DeleteView):
+	template_name = 'pages/blacklist_delete.html'
+	queryset = Blacklist.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+
+
+
+#MailBox based views
 class CreateMailBoxView(View):
 	def get(self, request, *args, **kwargs):
-		user = request.user
-		email = user.email.replace('@gmail.com','')
-		data =	{
-		'name': email,
-		'uri': 'gmail+ssl://' + email + '%40gmail.com:oauth2@imap.gmail.com?archive=Archived',
-		'owner': user,
-		}
-		data_json = JsonResponse(model_to_dict(data))
-		url = api_reverse("api-pages:mailbox-create")
-		response = requests.post(url, data=data_json)
-		if response == status.HTTP_200_OK:
-			redirect ('home')
+		email = request.user.email.replace('@gmail.com','')
+		new_mailbox = MailBox.objects.get_or_create(
+			name=email, 
+			uri=f'gmail+ssl://{email}%40gmail.com:oauth2@imap.gmail.com?archive=Archived',
+			owner=request.user
+			)
+		return redirect ('home')
+
+class MailBoxBayessUpdateView(UpdateView):
+	template_name = 'pages/mailbox_bayess_update.html'
+	form_class = MailBoxModelForm
+	queryset = MailBox.objects.all()
+
+	def get_success_url(self):
+		return reverse('home')
+
+class SpamSettingsView(View):
+	template_name = "pages/spam_settings.html"
+
+	def get (self, request, *args, **kwargs):
+		obj = MailBox.objects.get(id=kwargs["pk"])
+		blacklist = list(Blacklist.objects.filter(mailbox=obj))
+		if not blacklist:
+			blacklist = None
+		return render(request, self.template_name, {"object": obj, "blacklist":blacklist})
+
+class SpamStatsView(View):
+	template_name="pages/spam_stats.html"
+	def get (self, request, *args, **kwargs):
+		obj = MailBox.objects.get(id=kwargs["pk"])
+		return render(request, self.template_name, {"object": obj})
+
+
+
+
+#Mail based views
+class MailListView(ListView):
+	template_name = 'pages/mail_list.html'
+
+	def get_queryset(self):
+		mailbox = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		return Mail.objects.filter(mailbox_id=mailbox.id, spam=False).values()
+
+class SpamListView(ListView):
+	template_name = 'pages/spam_list.html'
+
+	def get_queryset(self):
+		mailbox = MailBox.objects.get(
+			name=self.request.user.email.replace('@gmail.com',''),
+			owner=self.request.user
+			)
+		return Mail.objects.filter(mailbox_id=mailbox.id, spam=True).values()
+
+class MailGetView(ListView):
+	template_name = 'pages/get_mail.html'
+
+	def get(self, request, *args, **kwargs):
+		creds = None
+		if os.path.exists('token.pickle'):
+			with open('token.pickle', 'rb') as token:
+				creds = pickle.load(token)
+		if not creds or not creds.valid:
+			if creds and creds.expired and creds.refresh_token:
+				creds.refresh(Request())
+			else:
+				flow = InstalledAppFlow.from_client_secrets_file(
+					'credentials.json',
+					['https://www.googleapis.com/auth/gmail.readonly']
+					)
+				creds = flow.run_local_server(port=8080)
+			with open('token.pickle', 'wb') as token:
+				pickle.dump(creds, token)
+
+		service = build('gmail', 'v1', credentials=creds)
+		results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+		messages = results.get('messages', [])
+
+		if messages:
+			email = request.user.email.replace('@gmail.com','')
+			mailbox = MailBox.objects.filter(
+				name=email,
+				owner=request.user
+				)
+			for message in messages:
+				msg = service.users().messages().get(
+					userId='me',
+					id=message['id'],
+					format="full",
+					metadataHeaders=None
+					).execute()
+				headers_raw = msg['payload']['headers']
+				headers = {}
+				for header in headers_raw:
+					headers[header['name']] = header['value']
+				if int(msg['historyId'])>mailbox[0].history_id:
+					print(int(msg['historyId']))
+					print(mailbox[0].history_id)
+					try:
+						obj = Mail.objects.get(
+							mailbox_id=mailbox[0].id,
+							subject=headers['Subject'],
+							from_header=headers['From'],
+							to_header=headers['To']
+							)
+					except Mail.DoesNotExist:
+						obj = Mail(
+							mailbox_id=mailbox[0].id,
+							subject=headers['Subject'],
+							from_header=headers['From'],
+							to_header=headers['To'],
+							message_id=msg['id'],
+							body=msg['payload']['body'],
+							#eml=msg['raw'],
+							spam=False,
+							snippet=msg['snippet']
+							)
+						obj.save()
+						x = mailbox[0].received_counter + 1
+						mailbox.update(received_counter=x, history_id=msg["historyId"])
+						mailbox[0].refresh_from_db()
+
+		return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+class MailDetailView(DetailView):
+	template_name = 'pages/mail_detail.html'
+	queryset = Mail.objects.all()
+
+class MailDeleteView(DeleteView):
+	template_name = 'pages/mail_delete.html'
+	queryset = Mail.objects.all()
+
+	def get_success_url(self):
+		return reverse('mail-list')
+
+class MailChangeSpamLabelView(View):
+	template_name = 'pages/mail_change_spam_label.html'
+
+	def get(self, request, *args, **kwargs):
+		queryset = Mail.objects.filter(id=kwargs["pk"])
+		context = {"subject": queryset[0].subject,
+			"from_header": queryset[0].from_header
+			}
+		return render(request, self.template_name, context)
+
+	def post(self, request, *args, **kwargs):
+		obj = Mail.objects.filter(id=kwargs["pk"])
+		mailbox = MailBox.objects.filter(id=obj[0].mailbox_id)
+		if obj[0].spam == True:
+			x = mailbox[0].spam_counter - 1
+			obj.update(spam=False) 
+			mailbox.update(spam_counter=x)
 		else:
-			redirect('not-working')
+			x = mailbox[0].spam_counter + 1
+			obj.update(spam=True)
+			mailbox.update(spam_counter=x)
+		obj[0].refresh_from_db()
+		mailbox[0].refresh_from_db()
+		ad = obj[0].get_absolute_url()
+		return redirect(ad)

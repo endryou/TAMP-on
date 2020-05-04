@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<h1>Ustawienia antyspamowe</h1>
+	<h3>Twoje ustawienia czułości filtru Bayessa:</h3>
+	<p>{{object.bayess_filter_sensibility}}   <a href="bayess-update/">Edytuj</a></p>
+	<h3>Twoja czarna lista:</h3>
+ 		{% if blacklist %}
+			{% for item in blacklist %}
+				<p>- {{item.address}}
+					<a href="../../blacklist/{{item.pk}}/update/">Edytuj</a>
+					<a href="../../blacklist/{{item.pk}}/delete/">Usuń</a>
+				</p>
+			{% endfor %}
+		{% else %}
+			<p>Twoja czarna lista jest pusta</p>
+		{% endif %} 
+	<p><a href="../../blacklist/create/">Dodaj nowy adres</a></p>
+
+	<p><a href="{% url 'home' %}">Powrót do strony głównej</a><p>
+{% endblock %}s

@@ -2,9 +2,14 @@
 
 {% block content %}
 	<h1>TAMP-on web app</h1>
-	<p>Twoje maile: w budowie</p>
-	<p>Preferencje: w budowie</p>
-	<p>Statystyki antyspamu: w budowie</p>
+	<p><a href="{% url 'mail-list' %}">Twoje maile</a><p>
+	<p><a href="{% url 'spam-list' %}">Twój spam</a><p>
+	<p><a href="../spam-stats/{{mailbox.id}}/">Statystyki antyspamowe</a></p>
+	<p><a href="../spam-settings/{{mailbox.id}}/">Ustawienia antyspamowe</a></p>
+	<p><a href="{% url 'user-update' %}">Zmień swoje dane</a></p>
+	<p><a href="{% url 'change-password' %}">Zmień hasło</a></p>
+	<p><a href="{% url 'user-delete' %}">Usuń swoje konto</a></p>
+	
 
 	<form class="logout-link" action="{% url 'logout' %}" method="post">
 		{% csrf_token %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<form action='.' method="POST">{% csrf_token %}
+		<h1>Czy na pewno chcesz całkowicie usunąć konto?</h1>
+		<p><input type='submit' value='Tak' />  <a href="{% url 'home' %}">Powrót</a></p>
+	</form>
+	
+	<p><a href='../home'>Powrót</a></p>
+
+{% endblock %}
