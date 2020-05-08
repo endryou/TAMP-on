@@ -77,6 +77,8 @@ class UserUpdateView (View):
 			form.save()
 		return redirect('home')
 	def get(self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
 		form = UserUpdateForm()
 		form.fields['first_name'].initial = request.user.first_name
 		form.fields['last_name'].initial = request.user.last_name
@@ -86,6 +88,8 @@ class UserUpdateView (View):
 class UserDeleteView (DeleteView):
 	template_name = 'pages/user_delete.html'
 	def get (self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
 		return render(request, self.template_name, {})
 	def post(self, request, *args, **kwargs):
 		user = User.objects.get(pk=request.user.pk)
@@ -119,6 +123,8 @@ class UserChangePassword(View):
 			update_session_auth_hash(request, user)
 			return redirect('home')
 	def get (self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
 		form = PasswordChangeForm(request.user)
 		return render(request, self.template_name, {'form': form})
 
@@ -134,14 +140,16 @@ class WelcomeView (View):
 class HomeView (View):
 	template_name = 'pages/home.html'
 	def get(self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
 		mailbox = MailBox.objects.get(
 			name=self.request.user.email.replace('@gmail.com',''),
 			owner=self.request.user
 			)
 		return render(request, self.template_name, {"mailbox": mailbox})
 
-class NotWorkingView (View):
-	template_name = 'pages/notworking.html'
+class AnonymousUserView (View):
+	template_name = 'pages/anonymous_user.html'
 	def get(self, request, *args, **kwargs):
 		return render(request, self.template_name)
 
@@ -153,6 +161,12 @@ class BlacklistCreateView(CreateView):
 	template_name = 'pages/blacklist_create.html'
 	form_class = BlacklistModelForm
 	queryset = Blacklist.objects.all()
+
+	def get (self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
 
 	def get_success_url(self):
 		return reverse('home')
@@ -170,12 +184,24 @@ class BlacklistUpdateView(UpdateView):
 	form_class = BlacklistModelForm
 	queryset = Blacklist.objects.all()
 
+	def get (self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
+
 	def get_success_url(self):
 		return reverse('home')
 
 class BlacklistDeleteView(DeleteView):
 	template_name = 'pages/blacklist_delete.html'
 	queryset = Blacklist.objects.all()
+
+	def get (self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect('anonymous-user')
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
 
 	def get_success_url(self):
 		return reverse('home')
@@ -272,6 +298,7 @@ class MailGetView(ListView):
 				name=email,
 				owner=request.user
 				)
+			history_id = mailbox[0].history_id
 			for message in messages:
 				msg = service.users().messages().get(
 					userId='me',
@@ -284,8 +311,7 @@ class MailGetView(ListView):
 				for header in headers_raw:
 					headers[header['name']] = header['value']
 				if int(msg['historyId'])>mailbox[0].history_id:
-					print(int(msg['historyId']))
-					print(mailbox[0].history_id)
+					history_id  = max(int(msg['historyId']),history_id)
 					try:
 						obj = Mail.objects.get(
 							mailbox_id=mailbox[0].id,
@@ -307,8 +333,10 @@ class MailGetView(ListView):
 							)
 						obj.save()
 						x = mailbox[0].received_counter + 1
-						mailbox.update(received_counter=x, history_id=msg["historyId"])
+						mailbox.update(received_counter=x)
 						mailbox[0].refresh_from_db()
+			mailbox.update(history_id=history_id)
+			mailbox[0].refresh_from_db()
 
 		return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 

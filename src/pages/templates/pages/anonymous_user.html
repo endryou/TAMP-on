@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<h1>Jesteś niezalogowany!</h1>
+	<p>Żeby uzyskać dostęp do tej strony musisz się zalogować!</p>
+	<p><a href="{% url 'user-login' %}">Zaloguj się</a></p>
+	<p><a href="{% url 'signup' %}">Nie masz konta? Zarejestruj się</a></p>
+
+{% endblock %}
