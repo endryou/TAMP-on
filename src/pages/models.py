@@ -54,6 +54,9 @@ class MailBox (Mailbox):
 	def get_absolute_url(self):
 		return reverse("spam-settings", kwargs={"pk": self.id})
 
+	def get_owner(self):
+		return self.owner
+
 class Mail(Message):
 	"""Fields inherited from Message:
 		id (AutoField) – Id
@@ -76,10 +79,15 @@ class Mail(Message):
 	def get_absolute_url(self):
 		return reverse("mail-detail", kwargs={"pk": self.id})
 
+	def get_owner(self):
+		obj = MailBox.objects.get(id=self.mailbox_id)
+		return obj.owner
+
 class Blacklist(models.Model):
 	mailbox = models.ForeignKey(MailBox, on_delete=models.CASCADE)
 	#mailbox_id = models.IntegerField()
 	address = models.CharField(max_length=30)
 
-	class Meta:
-		unique_together = ('mailbox', 'address',)
+	def get_owner(self):
+		obj = MailBox.objects.get(id=self.mailbox)
+		return obj.owner

@@ -6,6 +6,7 @@ from django.contrib.auth.forms import (
 	PasswordChangeForm
 	)
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from django.shortcuts import render, redirect, get_list_or_404
@@ -77,8 +78,6 @@ class UserUpdateView (View):
 			form.save()
 		return redirect('home')
 	def get(self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		form = UserUpdateForm()
 		form.fields['first_name'].initial = request.user.first_name
 		form.fields['last_name'].initial = request.user.last_name
@@ -88,8 +87,6 @@ class UserUpdateView (View):
 class UserDeleteView (DeleteView):
 	template_name = 'pages/user_delete.html'
 	def get (self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		return render(request, self.template_name, {})
 	def post(self, request, *args, **kwargs):
 		user = User.objects.get(pk=request.user.pk)
@@ -123,8 +120,6 @@ class UserChangePassword(View):
 			update_session_auth_hash(request, user)
 			return redirect('home')
 	def get (self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		form = PasswordChangeForm(request.user)
 		return render(request, self.template_name, {'form': form})
 
@@ -140,8 +135,6 @@ class WelcomeView (View):
 class HomeView (View):
 	template_name = 'pages/home.html'
 	def get(self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		mailbox = MailBox.objects.get(
 			name=self.request.user.email.replace('@gmail.com',''),
 			owner=self.request.user
@@ -150,6 +143,11 @@ class HomeView (View):
 
 class AnonymousUserView (View):
 	template_name = 'pages/anonymous_user.html'
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
+class NotOwnerView (View):
+	template_name = 'pages/not_owner.html'
 	def get(self, request, *args, **kwargs):
 		return render(request, self.template_name)
 
@@ -163,8 +161,6 @@ class BlacklistCreateView(CreateView):
 	queryset = Blacklist.objects.all()
 
 	def get (self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		form = BlacklistModelForm()
 		return render(request, self.template_name, {'form': form})
 
@@ -185,8 +181,6 @@ class BlacklistUpdateView(UpdateView):
 	queryset = Blacklist.objects.all()
 
 	def get (self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		form = BlacklistModelForm()
 		return render(request, self.template_name, {'form': form})
 
@@ -198,8 +192,6 @@ class BlacklistDeleteView(DeleteView):
 	queryset = Blacklist.objects.all()
 
 	def get (self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect('anonymous-user')
 		form = BlacklistModelForm()
 		return render(request, self.template_name, {'form': form})
 
@@ -317,14 +309,14 @@ class MailGetView(ListView):
 							mailbox_id=mailbox[0].id,
 							subject=headers['Subject'],
 							from_header=headers['From'],
-							to_header=headers['To']
+							to_header=headers['Delivered-To']
 							)
 					except Mail.DoesNotExist:
 						obj = Mail(
 							mailbox_id=mailbox[0].id,
 							subject=headers['Subject'],
 							from_header=headers['From'],
-							to_header=headers['To'],
+							to_header=headers['Delivered-To'],
 							message_id=msg['id'],
 							body=msg['payload']['body'],
 							#eml=msg['raw'],
@@ -355,7 +347,11 @@ class MailChangeSpamLabelView(View):
 	template_name = 'pages/mail_change_spam_label.html'
 
 	def get(self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return redirect ('anonymous-user')
 		queryset = Mail.objects.filter(id=kwargs["pk"])
+		if not queryset[0].get_owner == request.user:
+			return redirect ('not-owner')
 		context = {"subject": queryset[0].subject,
 			"from_header": queryset[0].from_header
 			}

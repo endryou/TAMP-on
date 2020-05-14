@@ -38,6 +38,7 @@ class MailBoxModelForm(forms.ModelForm):
         model = MailBox
         fields = ['bayess_filter_sensibility']
 
+
 class BlacklistModelForm(forms.ModelForm):
     class Meta:
         model = Blacklist

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<h1>Nie masz dostępu do tego zasobu!</h1>
+	<p>Żeby uzyskać dostęp do tej strony musisz się zalogować!</p>
+	<p><a href="#" onclick="javascript:window.history.back(-1);return false;">Powrót</a></p>
+	<p><a href="{% url 'home' %}">Powrót do strony głównej</a></p>
+
+{% endblock %}
