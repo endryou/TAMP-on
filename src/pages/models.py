@@ -36,11 +36,26 @@ class MailBox (Mailbox):
 	spam_counter = models.IntegerField(default=0)
 	received_counter = models.IntegerField(default=0)
 	history_id = models.BigIntegerField(default=0)
-	bayess_filter_sensibility = models.CharField(max_length=7, default="medium") #can  be "low", "medium", "high"
+	bayess_filter_choices =[
+		('low','low'),
+		('medium','medium'),
+		('high','high')
+		]
+	bayess_filter_sensibility = models.CharField(
+		max_length=7, 
+		choices=bayess_filter_choices, 
+		default='medium'
+		)
 	#blacklist = PickledObjectField(default=list)
 
 	def get_api_url(self, request=None):
 		return api_reverse("api-pages:mailbox-create", kwargs={'pk': self.id}, request=request)
+
+	def get_absolute_url(self):
+		return reverse("spam-settings", kwargs={"pk": self.id})
+
+	def get_owner(self):
+		return self.owner
 
 class Mail(Message):
 	"""Fields inherited from Message:
@@ -64,7 +79,15 @@ class Mail(Message):
 	def get_absolute_url(self):
 		return reverse("mail-detail", kwargs={"pk": self.id})
 
+	def get_owner(self):
+		obj = MailBox.objects.get(id=self.mailbox_id)
+		return obj.owner
+
 class Blacklist(models.Model):
 	mailbox = models.ForeignKey(MailBox, on_delete=models.CASCADE)
 	#mailbox_id = models.IntegerField()
 	address = models.CharField(max_length=30)
+
+	def get_owner(self):
+		obj = MailBox.objects.get(id=self.mailbox)
+		return obj.owner

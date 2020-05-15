@@ -6,7 +6,7 @@
 		<h2>Czy jesteś pewien, że chcesz usunąć tego maila? </h2>
 		<p>Tytuł: {{ object.subject }}</p>
 		<p>Od: {{object.from_header}}?</p>
-		<p><input type='submit' value='Tak' />  <a href="{% url 'mail-list' %}">Powrót</a></p>
+		<p><input type='submit' value='Tak' />  <a href="#" onclick="javascript:window.history.back(-1);return false;">Powrót</a></p>
 	</form>
 
 {% endblock %}

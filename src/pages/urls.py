@@ -32,7 +32,8 @@ from .views import (
     #Main views
     HomeView,
     WelcomeView,
-    NotWorkingView,
+    AnonymousUserView,
+    NotOwnerView,
 
     #Blacklist based views
     BlacklistCreateView,
@@ -66,7 +67,8 @@ urlpatterns = [
     #Other views
     path('', WelcomeView.as_view(), name='welcome'),
     path('home/', HomeView.as_view(), name='home'),
-    path('notworking/', NotWorkingView.as_view(), name='not-working'),
+    path('anonymous-user/', AnonymousUserView.as_view(), name='anonymous-user'),
+    path('not-owner/', NotOwnerView.as_view(), name='not-owner'),
 
     #Blacklist based views
     path('blacklist/create/', BlacklistCreateView.as_view(), name='blacklist-create'),

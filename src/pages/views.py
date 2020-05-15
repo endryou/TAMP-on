@@ -6,6 +6,7 @@ from django.contrib.auth.forms import (
 	PasswordChangeForm
 	)
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from django.shortcuts import render, redirect, get_list_or_404
@@ -140,8 +141,13 @@ class HomeView (View):
 			)
 		return render(request, self.template_name, {"mailbox": mailbox})
 
-class NotWorkingView (View):
-	template_name = 'pages/notworking.html'
+class AnonymousUserView (View):
+	template_name = 'pages/anonymous_user.html'
+	def get(self, request, *args, **kwargs):
+		return render(request, self.template_name)
+
+class NotOwnerView (View):
+	template_name = 'pages/not_owner.html'
 	def get(self, request, *args, **kwargs):
 		return render(request, self.template_name)
 
@@ -153,6 +159,10 @@ class BlacklistCreateView(CreateView):
 	template_name = 'pages/blacklist_create.html'
 	form_class = BlacklistModelForm
 	queryset = Blacklist.objects.all()
+
+	def get (self, request, *args, **kwargs):
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
 
 	def get_success_url(self):
 		return reverse('home')
@@ -170,12 +180,20 @@ class BlacklistUpdateView(UpdateView):
 	form_class = BlacklistModelForm
 	queryset = Blacklist.objects.all()
 
+	def get (self, request, *args, **kwargs):
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
+
 	def get_success_url(self):
 		return reverse('home')
 
 class BlacklistDeleteView(DeleteView):
 	template_name = 'pages/blacklist_delete.html'
 	queryset = Blacklist.objects.all()
+
+	def get (self, request, *args, **kwargs):
+		form = BlacklistModelForm()
+		return render(request, self.template_name, {'form': form})
 
 	def get_success_url(self):
 		return reverse('home')
@@ -272,6 +290,7 @@ class MailGetView(ListView):
 				name=email,
 				owner=request.user
 				)
+			history_id = mailbox[0].history_id
 			for message in messages:
 				msg = service.users().messages().get(
 					userId='me',
@@ -284,21 +303,20 @@ class MailGetView(ListView):
 				for header in headers_raw:
 					headers[header['name']] = header['value']
 				if int(msg['historyId'])>mailbox[0].history_id:
-					print(int(msg['historyId']))
-					print(mailbox[0].history_id)
+					history_id  = max(int(msg['historyId']),history_id)
 					try:
 						obj = Mail.objects.get(
 							mailbox_id=mailbox[0].id,
 							subject=headers['Subject'],
 							from_header=headers['From'],
-							to_header=headers['To']
+							to_header=headers['Delivered-To']
 							)
 					except Mail.DoesNotExist:
 						obj = Mail(
 							mailbox_id=mailbox[0].id,
 							subject=headers['Subject'],
 							from_header=headers['From'],
-							to_header=headers['To'],
+							to_header=headers['Delivered-To'],
 							message_id=msg['id'],
 							body=msg['payload']['body'],
 							#eml=msg['raw'],
@@ -307,8 +325,10 @@ class MailGetView(ListView):
 							)
 						obj.save()
 						x = mailbox[0].received_counter + 1
-						mailbox.update(received_counter=x, history_id=msg["historyId"])
+						mailbox.update(received_counter=x)
 						mailbox[0].refresh_from_db()
+			mailbox.update(history_id=history_id)
+			mailbox[0].refresh_from_db()
 
 		return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
