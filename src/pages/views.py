@@ -347,11 +347,7 @@ class MailChangeSpamLabelView(View):
 	template_name = 'pages/mail_change_spam_label.html'
 
 	def get(self, request, *args, **kwargs):
-		if not request.user.is_authenticated:
-			return redirect ('anonymous-user')
 		queryset = Mail.objects.filter(id=kwargs["pk"])
-		if not queryset[0].get_owner == request.user:
-			return redirect ('not-owner')
 		context = {"subject": queryset[0].subject,
 			"from_header": queryset[0].from_header
 			}
